@@ -1,0 +1,245 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Biodata Registration</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(135deg, #f5f7fa, #c3cfe2);
+      margin: 0;
+      padding: 20px;
+    }
+    h2 {
+      text-align: center;
+      color: #333;
+    }
+    form, .user-details, .admin-view {
+      background: white;
+      padding: 20px;
+      max-width: 600px;
+      margin: auto;
+      border-radius: 10px;
+      box-shadow: 0 0 15px rgba(0,0,0,0.1);
+      animation: fadeIn 0.5s ease-in-out;
+    }
+    input, select, textarea {
+      width: 100%;
+      padding: 8px;
+      margin: 10px 0;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+    }
+    button {
+      background-color: #4CAF50;
+      color: white;
+      padding: 10px;
+      width: 100%;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+    button:hover {
+      background-color: #45a049;
+    }
+    .logout-btn {
+      background-color: #f44336;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 15px;
+    }
+    th, td {
+      border: 1px solid #ddd;
+      padding: 8px;
+    }
+    th {
+      background-color: #4CAF50;
+      color: white;
+    }
+    img {
+      max-width: 100px;
+      max-height: 100px;
+    }
+    @keyframes fadeIn {
+      from {opacity: 0;}
+      to {opacity: 1;}
+    }
+  </style>
+</head>
+<body>
+  <div id="formContainer">
+    <h2>Register</h2>
+    <form id="registrationForm" onsubmit="registerUser(event)">
+      <input type="text" id="name" placeholder="Full Name" required />
+      <input type="text" id="mobile" placeholder="Mobile Number" required />
+      <input type="email" id="email" placeholder="Email Address" required />
+      <input type="date" id="dob" placeholder="Date of Birth" required />
+      <select id="marital" required>
+        <option value="">Marital Status</option>
+        <option value="Single">Single</option>
+        <option value="Married">Married</option>
+      </select>
+      <textarea id="address" placeholder="Address" required></textarea>
+      <input type="text" id="education" placeholder="Education" required />
+      <input type="text" id="occupation" placeholder="Occupation" required />
+      <select id="gender" required>
+        <option value="">Gender</option>
+        <option value="Male">Male</option>
+        <option value="Female">Female</option>
+        <option value="Other">Other</option>
+      </select>
+      <input type="file" id="profilePic" accept="image/*" required />
+      <button type="submit">Register</button>
+    </form>
+    <p style="text-align:center;">Already registered? <button onclick="showLogin()">Login</button></p>
+  </div>
+
+  <script>
+    let users = JSON.parse(localStorage.getItem('users') || '[]');
+
+    function registerUser(e) {
+      e.preventDefault();
+      const form = e.target;
+      const name = form.name.value;
+      const mobile = form.mobile.value;
+      const email = form.email.value;
+      const dob = form.dob.value;
+      const marital = form.marital.value;
+      const address = form.address.value;
+      const education = form.education.value;
+      const occupation = form.occupation.value;
+      const gender = form.gender.value;
+      const file = form.profilePic.files[0];
+
+      if (users.some(u => u.mobile === mobile)) {
+        alert("User already registered.");
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = function () {
+        const photo = reader.result;
+        users.push({ name, mobile, email, dob, marital, address, education, occupation, gender, photo });
+        localStorage.setItem('users', JSON.stringify(users));
+        form.reset();
+        showUserDetails(users[users.length - 1], true);
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function showLogin() {
+      document.getElementById("formContainer").innerHTML = `
+        <h2>Login</h2>
+        <form onsubmit="login(event)">
+          <input type="text" id="loginMobile" placeholder="Mobile Number / Username" required />
+          <input type="text" id="loginPassword" placeholder="Date of Birth / Password" required />
+          <button type="submit">Login</button>
+        </form>
+      `;
+    }
+
+    function login(e) {
+      e.preventDefault();
+      const username = document.getElementById("loginMobile").value;
+      const password = document.getElementById("loginPassword").value;
+
+      if (username === 'admin2036' && password === 'admin2036') {
+        showAdminTable();
+        return;
+      }
+
+      const user = users.find(u => u.mobile === username && u.dob.replace(/-/g, '') === password);
+      if (!user) {
+        alert("User not found or already logged in.");
+        return;
+      }
+
+      showUserDetails(user, false);
+      users = users.filter(u => u.mobile !== username);
+      localStorage.setItem('users', JSON.stringify(users));
+    }
+
+    function showUserDetails(user, isNew) {
+      document.getElementById("formContainer").innerHTML = `
+        <h2>${isNew ? 'Registration Successful' : 'Welcome Back'}</h2>
+        <div class="user-details">
+          <img src="${user.photo}" alt="Profile Photo" />
+          <p><strong>Name:</strong> <input value="${user.name}" /></p>
+          <p><strong>Mobile:</strong> ${user.mobile}</p>
+          <p><strong>Email:</strong> <input value="${user.email}" /></p>
+          <p><strong>Date of Birth:</strong> <input type="date" value="${user.dob}" /></p>
+          <p><strong>Marital Status:</strong> <input value="${user.marital}" /></p>
+          <p><strong>Address:</strong> <textarea>${user.address}</textarea></p>
+          <p><strong>Education:</strong> <input value="${user.education}" /></p>
+          <p><strong>Occupation:</strong> <input value="${user.occupation}" /></p>
+          <p><strong>Gender:</strong> <input value="${user.gender}" /></p>
+          <button onclick="logout()" class="logout-btn">Logout</button>
+        </div>
+      `;
+    }
+
+    function showAdminTable() {
+      let tableHTML = `
+        <h2>Registered Users</h2>
+        <button onclick="exportToExcel()">Export to Excel</button>
+        <button onclick="exportToPDF()">Export to PDF</button>
+        <table>
+          <tr>
+            <th>Name</th><th>Mobile</th><th>Email</th><th>DOB</th>
+            <th>Marital</th><th>Address</th><th>Education</th><th>Occupation</th><th>Gender</th><th>Photo</th>
+          </tr>`;
+      users.forEach(u => {
+        tableHTML += `
+          <tr>
+            <td>${u.name}</td><td>${u.mobile}</td><td>${u.email}</td><td>${u.dob}</td>
+            <td>${u.marital}</td><td>${u.address}</td><td>${u.education}</td>
+            <td>${u.occupation}</td><td>${u.gender}</td><td><img src="${u.photo}" /></td>
+          </tr>`;
+      });
+      tableHTML += `</table><button class="logout-btn" onclick="logout()">Logout</button>`;
+      document.getElementById("formContainer").innerHTML = tableHTML;
+    }
+
+    function logout() {
+      location.reload();
+    }
+
+    function exportToExcel() {
+      const ws = XLSX.utils.json_to_sheet(users);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Users");
+      XLSX.writeFile(wb, "registered_users.xlsx");
+    }
+
+    async function exportToPDF() {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+      doc.setFontSize(12);
+      doc.text("Registered Users", 14, 15);
+
+      let y = 25;
+      users.forEach((u, i) => {
+        doc.text(
+          `${i + 1}. ${u.name}, ${u.mobile}, ${u.email}, ${u.dob}, ${u.marital}, ${u.address}, ${u.education}, ${u.occupation}, ${u.gender}`,
+          10, y
+        );
+        y += 10;
+        if (y > 270) {
+          doc.addPage();
+          y = 20;
+        }
+      });
+
+      doc.save("registered_users.pdf");
+    }
+  </script>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+</body>
+</html>
